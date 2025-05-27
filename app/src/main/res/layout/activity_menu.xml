@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="32dp"
+    android:gravity="center"
+    android:background="@color/background_gradient">
+
+    <!-- Заголовок гри -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BLE Joystick Game"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="#2196F3"
+        android:layout_marginBottom="80dp"
+        android:gravity="center" />
+
+    <!-- Контейнер для кнопок -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <!-- Кнопка "Грати" -->
+        <Button
+            android:id="@+id/playButton"
+            android:layout_width="250dp"
+            android:layout_height="70dp"
+            android:text="🎮 Грати"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/button_play"
+            android:textColor="@android:color/white" />
+
+        <!-- Кнопка "Налаштування" -->
+        <Button
+            android:id="@+id/settingsButton"
+            android:layout_width="250dp"
+            android:layout_height="70dp"
+            android:text="⚙️ Налаштування"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/button_settings"
+            android:textColor="@android:color/white" />
+
+        <!-- Кнопка "Вихід" -->
+        <Button
+            android:id="@+id/exitButton"
+            android:layout_width="250dp"
+            android:layout_height="70dp"
+            android:text="🚪 Вихід"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/button_exit"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+
+    <!-- Інформація внизу -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Версія 1.0"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:layout_marginTop="60dp" />
+
+</LinearLayout>
