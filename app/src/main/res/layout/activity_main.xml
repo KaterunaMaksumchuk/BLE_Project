@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="BLE Joystick Reader"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="#2196F3"
+        android:layout_marginBottom="40dp" />
+
+    <Button
+        android:id="@+id/connectButton"
+        android:layout_width="220dp"
+        android:layout_height="70dp"
+        android:text="Scan &amp; Connect"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="40dp" />
+
+    <TextView
+        android:id="@+id/statusLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Ready to scan"
+        android:textSize="18sp"
+        android:layout_marginBottom="40dp"
+        android:textColor="#666666"
+        android:gravity="center" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/xValueLabel"
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:layout_weight="1"
+            android:text="X: 0"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:background="#E3F2FD"
+            android:layout_marginEnd="12dp"
+            android:textColor="#1976D2" />
+
+        <TextView
+            android:id="@+id/yValueLabel"
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:layout_weight="1"
+            android:text="Y: 0"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:background="#E8F5E8"
+            android:layout_marginStart="12dp"
+            android:textColor="#388E3C" />
+
+    </LinearLayout>
+
+</LinearLayout>
