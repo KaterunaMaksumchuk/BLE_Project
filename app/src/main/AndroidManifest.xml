@@ -49,5 +49,13 @@
             android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.DarkActionBar" />
 
+        <!-- ГРА ЗМІЙКА - основна гра -->
+        <activity
+            android:name=".SnakeGameActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:screenOrientation="portrait"  />
+
+
     </application>
 </manifest>

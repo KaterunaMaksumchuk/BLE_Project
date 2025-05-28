@@ -31,8 +31,8 @@ public class MenuActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Переходимо до MainActivity (гра з джойстиком)
-                Intent intent = new Intent(MenuActivity.this, MainActivity.class);
+                // Переходимо до SnakeGameActivity (гра змійка)
+                Intent intent = new Intent(MenuActivity.this, SnakeGameActivity.class);
                 startActivity(intent);
             }
         });
