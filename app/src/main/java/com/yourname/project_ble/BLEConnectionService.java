@@ -73,9 +73,50 @@ public class BLEConnectionService {
         this.joystickListener = listener;
     }
 
+    /**
+     * Новий метод для парсингу 4-байтових даних: X1, Y1, X2, Y2
+     * @param data - масив з 4 байтів від nRF52832
+     */
+    public void parseBinaryJoystickData(byte[] data) {
+        try {
+            if (data == null || data.length < 4) {
+                Log.w(TAG, "❌ Invalid data length: " + (data != null ? data.length : "null"));
+                return;
+            }
+
+            // Конвертуємо байти в unsigned int (0-255)
+            int x1 = data[0] & 0xFF;  // Джойстик 1, вісь X
+            int y1 = data[1] & 0xFF;  // Джойстик 1, вісь Y
+            int x2 = data[2] & 0xFF;  // Джойстик 2, вісь X
+            int y2 = data[3] & 0xFF;  // Джойстик 2, вісь Y
+
+            Log.d(TAG, "🎮 RAW BINARY: [" + x1 + ", " + y1 + ", " + x2 + ", " + y2 + "]");
+
+            // Конвертуємо з діапазону 0-255 в 0-1023 (для сумісності з старим кодом)
+            int scaled_x1 = (x1 * 1023) / 255;
+            int scaled_y1 = (y1 * 1023) / 255;
+            int scaled_x2 = (x2 * 1023) / 255;
+            int scaled_y2 = (y2 * 1023) / 255;
+
+            Log.d(TAG, "✅ SCALED: P1(X=" + scaled_x1 + ", Y=" + scaled_y1 + ") P2(X=" + scaled_x2 + ", Y=" + scaled_y2 + ")");
+
+            // Відправляємо дані слухачам
+            if (joystickListener != null) {
+                joystickListener.onPlayer1Data(scaled_x1, scaled_y1);
+                joystickListener.onPlayer2Data(scaled_x2, scaled_y2);
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Binary parse error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Метод для парсингу текстових даних (залишаємо для зворотної сумісності)
+     */
     public void parsePlayer1Data(String data) {
         try {
-            Log.d(TAG, "🎮 RAW P1 data: '" + data + "'");
+            Log.d(TAG, "🎮 RAW P1 TEXT data: '" + data + "'");
 
             String cleanData = data.trim()
                     .replace("?", "")
@@ -107,7 +148,7 @@ public class BLEConnectionService {
 
     public void parsePlayer2Data(String data) {
         try {
-            Log.d(TAG, "🎮 RAW P2 data: '" + data + "'");
+            Log.d(TAG, "🎮 RAW P2 TEXT data: '" + data + "'");
 
             String cleanData = data.trim()
                     .replace("?", "")
@@ -137,7 +178,32 @@ public class BLEConnectionService {
         }
     }
 
-    // Метод для парсингу даних з двох джойстиків в одному повідомленні
+    /**
+     * Універсальний метод для автоматичного визначення формату даних
+     */
+    public void parseJoystickData(byte[] data) {
+        if (data == null || data.length == 0) {
+            Log.w(TAG, "❌ Empty data received");
+            return;
+        }
+
+        Log.d(TAG, "📦 Received " + data.length + " bytes");
+
+        if (data.length == 4) {
+            // Новий бінарний формат: 4 байти
+            Log.d(TAG, "🎯 Using BINARY format (4 bytes)");
+            parseBinaryJoystickData(data);
+        } else {
+            // Старий текстовий формат
+            Log.d(TAG, "🎯 Using TEXT format");
+            String textData = new String(data);
+            parseCombinedJoystickData(textData, 1);
+        }
+    }
+
+    /**
+     * Метод для парсингу текстових даних з двох джойстиків (залишаємо для сумісності)
+     */
     public void parseCombinedJoystickData(String data, int playerNumber) {
         try {
             Log.d(TAG, "🎮 RAW COMBINED data from P" + playerNumber + ": '" + data + "'");
@@ -176,6 +242,24 @@ public class BLEConnectionService {
                 }
 
                 Log.d(TAG, "✅ P1: X=" + x1 + " Y=" + y1 + ", P2: X=" + x2 + " Y=" + y2);
+                return;
+            }
+
+            // ТИМЧАСОВЕ РІШЕННЯ: якщо приходить тільки один джойстик (X:Y), симулюємо другий
+            if (parts.length == 2) {
+                int x1 = Integer.parseInt(parts[0]);
+                int y1 = Integer.parseInt(parts[1]);
+
+                // Симулюємо другий джойстик зі зміщенням +50
+                int x2 = Math.min(1023, x1 + 50);
+                int y2 = Math.min(1023, y1 + 50);
+
+                if (joystickListener != null) {
+                    joystickListener.onPlayer1Data(x1, y1);
+                    joystickListener.onPlayer2Data(x2, y2); // СИМУЛЯЦІЯ!
+                }
+
+                Log.d(TAG, "🎯 СИМУЛЯЦІЯ: P1: X=" + x1 + " Y=" + y1 + ", P2: X=" + x2 + " Y=" + y2 + " (симульований)");
                 return;
             }
 
@@ -219,7 +303,14 @@ public class BLEConnectionService {
     }
 
     public boolean isPlayer2Connected() {
+        // Для одного пристрою з двома джойстиками - якщо Player 1 підключений, то і Player 2 теж
         return player2Gatt != null && player2Characteristic != null;
+    }
+
+    // Метод для перевірки чи це один пристрій з двома джойстиками
+    public boolean isSingleDeviceWithTwoJoysticks() {
+        return player1Gatt != null && player2Gatt != null &&
+                player1Gatt == player2Gatt && player1Characteristic == player2Characteristic;
     }
 
     // Метод для очищення підключень

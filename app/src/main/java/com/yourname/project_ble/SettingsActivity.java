@@ -216,12 +216,8 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         connectPlayer2Button.setOnClickListener(v -> {
-            if (player2Connected) {
-                disconnectPlayer2();
-            } else {
-                connectingPlayer = 2;
-                startScanAndConnect();
-            }
+            // Для одного пристрою з двома джойстиками - кнопка неактивна
+            Toast.makeText(this, "Обидва джойстики на одному пристрої!\nПідключи через кнопку Гравця 1", Toast.LENGTH_LONG).show();
         });
 
         playersRadioGroup.setOnCheckedChangeListener((group, checkedId) -> {
@@ -276,13 +272,15 @@ public class SettingsActivity extends AppCompatActivity {
             connectPlayer2Button.setEnabled(false);
             connectPlayer2Button.setText("Недоступно");
         } else {
-            // Для 2 гравців - активуємо секцію гравця 2
+            // Для 2 гравців - показуємо що це той же пристрій
             player2Section.setAlpha(1.0f);
-            connectPlayer2Button.setEnabled(true);
-            if (player2Connected) {
-                connectPlayer2Button.setText("Відключити");
-            } else {
-                connectPlayer2Button.setText("Підключити");
+            connectPlayer2Button.setEnabled(false); // Завжди неактивна!
+            connectPlayer2Button.setText("Той же пристрій");
+
+            // Якщо Player 1 підключений, то автоматично Player 2 теж
+            if (player1Connected) {
+                player2Connected = true;
+                updateConnectionUI();
             }
         }
 
@@ -586,14 +584,21 @@ public class SettingsActivity extends AppCompatActivity {
     private void handleCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int playerNumber) {
         byte[] data = characteristic.getValue();
         if (data != null && data.length > 0) {
-            String dataString = new String(data);
-            Log.d(TAG, "🎮 RAW data from player " + playerNumber + ": '" + dataString + "'");
+
+            Log.d(TAG, "📦 Received " + data.length + " bytes from player " + playerNumber);
+
+            // Логуємо сирі байти для налагодження
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : data) {
+                hexString.append(String.format("%02X ", b & 0xFF));
+            }
+            Log.d(TAG, "🔢 HEX data: " + hexString.toString());
 
             // Передаємо дані в BLE Service для обробки
             BLEConnectionService bleService = BLEConnectionService.getInstance();
 
-            // Спробуємо спершу як комбіновані дані (якщо є 2 джойстики на одній платі)
-            bleService.parseCombinedJoystickData(dataString, playerNumber);
+            // Використовуємо новий універсальний метод
+            bleService.parseJoystickData(data);
         }
     }
 
