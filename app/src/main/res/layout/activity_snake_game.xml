@@ -3,39 +3,52 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#1E1E1E">
+    android:background="@drawable/gradient_background">
 
     <!-- Кнопки зверху -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp">
-
-        <Button
-            android:id="@+id/connectButton"
-            android:layout_width="0dp"
-            android:layout_height="50dp"
-            android:layout_weight="1"
-            android:text="Connect"
-            android:layout_marginEnd="4dp" />
+        android:padding="16dp"
+        android:background="#3E3E3E">
 
         <Button
             android:id="@+id/startGameButton"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="56dp"
             android:layout_weight="1"
-            android:text="START"
+            android:text="🎮 START"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#4CAF50"
+            android:layout_marginEnd="8dp"
+            style="@style/Widget.Material3.Button" />
+
+        <Button
+            android:id="@+id/settingsButton"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_weight="1"
+            android:text="⚙️ Налаштування"
+            android:textSize="14sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#FF9800"
             android:layout_marginStart="4dp"
-            android:layout_marginEnd="4dp" />
+            android:layout_marginEnd="4dp"
+            style="@style/Widget.Material3.Button" />
 
         <Button
             android:id="@+id/menuButton"
             android:layout_width="0dp"
-            android:layout_height="50dp"
+            android:layout_height="56dp"
             android:layout_weight="1"
-            android:text="Menu"
-            android:layout_marginStart="4dp" />
+            android:text="🏠 Меню"
+            android:textSize="16sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#9C27B0"
+            android:layout_marginStart="8dp"
+            style="@style/Widget.Material3.Button" />
 
     </LinearLayout>
 
@@ -43,44 +56,92 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp">
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#2E2E2E">
 
         <TextView
             android:id="@+id/statusLabel"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Натисніть START для тесту"
+            android:text="Підключи контролер в налаштуваннях"
             android:textSize="16sp"
-            android:textColor="#FFFFFF" />
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:background="@drawable/status_background"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp" />
 
-        <TextView
-            android:id="@+id/scoreLabel"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Рахунок: 0"
-            android:textSize="18sp"
-            android:textColor="#4CAF50"
-            android:layout_marginStart="16dp" />
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/scoreLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏆 Рахунок: 0"
+                android:textSize="20sp"
+                android:textColor="#4CAF50"
+                android:textStyle="bold"
+                android:background="@drawable/controller_background"
+                android:padding="8dp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
-    <!-- ТЕСТОВИЙ GAMEVIEW - максимально простий -->
-    <com.yourname.project_ble.GameView
-        android:id="@+id/gameView"
+    <!-- Ігрове поле -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:background="#1E1E1E"
+        android:padding="4dp">
 
-    <!-- Інструкції внизу -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Тестуємо GameView"
-        android:textSize="16sp"
-        android:textColor="#CCCCCC"
-        android:gravity="center"
-        android:padding="16dp" />
+        <com.yourname.project_ble.GameView
+            android:id="@+id/gameView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Overlay для інструкцій -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="horizontal"
+            android:background="#80000000"
+            android:padding="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🕹️ Керуй джойстиком"
+                android:textSize="14sp"
+                android:textColor="#CCCCCC"
+                android:gravity="start" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍎 Збирай їжу"
+                android:textSize="14sp"
+                android:textColor="#CCCCCC"
+                android:layout_marginStart="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="💀 Не врізайся!"
+                android:textSize="14sp"
+                android:textColor="#CCCCCC"
+                android:layout_marginStart="16dp" />
+
+        </LinearLayout>
+
+    </FrameLayout>
 
 </LinearLayout>

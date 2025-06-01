@@ -40,11 +40,9 @@ public class MenuActivity extends AppCompatActivity {
         settingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Тут можна додати перехід до налаштувань
-                // Поки що просто показуємо повідомлення
-                android.widget.Toast.makeText(MenuActivity.this,
-                        "Налаштування ще не реалізовані",
-                        android.widget.Toast.LENGTH_SHORT).show();
+                // Переходимо до налаштувань з BLE підключенням
+                Intent intent = new Intent(MenuActivity.this, SettingsActivity.class);
+                startActivity(intent);
             }
         });
 

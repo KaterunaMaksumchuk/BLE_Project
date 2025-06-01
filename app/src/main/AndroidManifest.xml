@@ -54,8 +54,15 @@
             android:name=".SnakeGameActivity"
             android:exported="false"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"
-            android:screenOrientation="portrait"  />
+            android:screenOrientation="portrait" />
 
+        <!-- НАЛАШТУВАННЯ - BLE підключення і конфігурація -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:screenOrientation="portrait"
+            android:label="Налаштування" />
 
     </application>
 </manifest>
