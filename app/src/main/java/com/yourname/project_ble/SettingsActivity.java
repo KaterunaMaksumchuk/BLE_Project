@@ -41,6 +41,9 @@ public class SettingsActivity extends AppCompatActivity {
     private static final String TAG = "SettingsActivity";
     private static final int PERMISSION_REQUEST_CODE = 1;
 
+    // Константа для MAC-адреси джойстика (замініть на вашу реальну MAC-адресу)
+    private static final String JOYSTICK_MAC_ADDRESS = "FF:CD:2D:EA:F8:7B"; // Ваша MAC-адреса з логів
+
     // SharedPreferences ключі
     private static final String PREFS_NAME = "SnakeGamePrefs";
     private static final String KEY_PLAYERS_COUNT = "players_count";
@@ -96,6 +99,7 @@ public class SettingsActivity extends AppCompatActivity {
         loadSettings();
         setupListeners();
         checkPermissions();
+        setupJoystickTesting();
 
         // Обробка кнопки "Назад"
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -104,31 +108,60 @@ public class SettingsActivity extends AppCompatActivity {
                 saveSettings();
                 finish();
             }
+        });
+    }
 
-            private void setupJoystickTesting() {
-                // Встановлюємо тестовий слухач джойстика
-                BLEConnectionService bleService = BLEConnectionService.getInstance();
-                bleService.setJoystickDataListener(new BLEConnectionService.JoystickDataListener() {
-                    @Override
-                    public void onPlayer1Data(int x, int y) {
-                        runOnUiThread(() -> {
-                            updateConnectionStatus("🕹️ Гравець 1: X=" + x + " Y=" + y);
-                        });
-                    }
+    /**
+     * Спроба прямого підключення до джойстика за MAC-адресою
+     */
+    private boolean tryDirectConnection() {
+        try {
+            Log.d(TAG, "🎯 Спроба прямого підключення до: " + JOYSTICK_MAC_ADDRESS);
+            updateConnectionStatus("🔗 Пряме підключення до джойстика...");
 
-                    @Override
-                    public void onPlayer2Data(int x, int y) {
-                        runOnUiThread(() -> {
-                            updateConnectionStatus("🕹️ Гравець 2: X=" + x + " Y=" + y);
-                        });
-                    }
+            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(JOYSTICK_MAC_ADDRESS);
+            if (device != null) {
+                connectToDevice(device);
+                return true;
+            } else {
+                Log.w(TAG, "⚠️ Не вдалося отримати пристрій за MAC-адресою");
+                return false;
+            }
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "❌ Невірна MAC-адреса: " + e.getMessage());
+            updateConnectionStatus("❌ Невірна MAC-адреса джойстика");
+            return false;
+        } catch (SecurityException e) {
+            Log.e(TAG, "❌ Немає дозволів для прямого підключення: " + e.getMessage());
+            return false;
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Помилка прямого підключення: " + e.getMessage());
+            return false;
+        }
+    }
 
-                    @Override
-                    public void onConnectionStatusChanged(String status) {
-                        runOnUiThread(() -> {
-                            updateConnectionStatus(status);
-                        });
-                    }
+    private void setupJoystickTesting() {
+        // Встановлюємо тестовий слухач джойстика
+        BLEConnectionService bleService = BLEConnectionService.getInstance();
+        bleService.setJoystickDataListener(new BLEConnectionService.JoystickDataListener() {
+            @Override
+            public void onPlayer1Data(int x, int y) {
+                runOnUiThread(() -> {
+                    updateConnectionStatus("🕹️ Гравець 1: X=" + x + " Y=" + y);
+                });
+            }
+
+            @Override
+            public void onPlayer2Data(int x, int y) {
+                runOnUiThread(() -> {
+                    updateConnectionStatus("🕹️ Гравець 2: X=" + x + " Y=" + y);
+                });
+            }
+
+            @Override
+            public void onConnectionStatusChanged(String status) {
+                runOnUiThread(() -> {
+                    updateConnectionStatus(status);
                 });
             }
         });
@@ -211,7 +244,10 @@ public class SettingsActivity extends AppCompatActivity {
                 disconnectPlayer1();
             } else {
                 connectingPlayer = 1;
-                startScanAndConnect();
+                // Спробуємо спершу пряме підключення, потім сканування
+                if (!tryDirectConnection()) {
+                    startScanAndConnect();
+                }
             }
         });
 
@@ -423,7 +459,7 @@ public class SettingsActivity extends AppCompatActivity {
                     Log.e(TAG, "SecurityException при зупинці: " + e.getMessage());
                 }
                 resetScanState();
-                updateConnectionStatus("⏰ Таймаут - пристрій не знайдено");
+                updateConnectionStatus("⏰ Джойстик " + JOYSTICK_MAC_ADDRESS + " не знайдено");
             }
         }, 10000L);
     }
@@ -440,8 +476,14 @@ public class SettingsActivity extends AppCompatActivity {
             BluetoothDevice device = result.getDevice();
             try {
                 String deviceName = device.getName();
-                if (deviceName != null) {
-                    Log.d(TAG, "Підключаємо гравця " + connectingPlayer + " до: " + deviceName);
+                String deviceAddress = device.getAddress();
+
+                // Перевіряємо чи це наш джойстик за MAC-адресою або ім'ям
+                if (deviceName != null && (deviceName.contains("nRF52") ||
+                        deviceName.contains("Nordic") || deviceName.contains("UART") ||
+                        JOYSTICK_MAC_ADDRESS.equals(deviceAddress))) {
+
+                    Log.d(TAG, "Знайдено джойстик: " + deviceName + " (" + deviceAddress + ")");
                     try {
                         bluetoothLeScanner.stopScan(this);
                     } catch (SecurityException e) {
@@ -585,7 +627,7 @@ public class SettingsActivity extends AppCompatActivity {
         byte[] data = characteristic.getValue();
         if (data != null && data.length > 0) {
 
-            Log.d(TAG, "📦 Received " + data.length + " bytes from player " + playerNumber);
+            Log.d(TAG, "📦 Received " + data.length + " bytes from JOYSTICK");
 
             // Логуємо сирі байти для налагодження
             StringBuilder hexString = new StringBuilder();
@@ -597,7 +639,7 @@ public class SettingsActivity extends AppCompatActivity {
             // Передаємо дані в BLE Service для обробки
             BLEConnectionService bleService = BLEConnectionService.getInstance();
 
-            // Використовуємо новий універсальний метод
+            // Використовуємо універсальний метод - автоматично визначить формат
             bleService.parseJoystickData(data);
         }
     }
@@ -605,21 +647,35 @@ public class SettingsActivity extends AppCompatActivity {
     private void handleDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status, int playerNumber) {
         if (status == BluetoothGatt.GATT_SUCCESS) {
             BLEConnectionService bleService = BLEConnectionService.getInstance();
+
+            // Для одного пристрою з двома джойстиками
             if (playerNumber == 1) {
                 bleService.setPlayer1Connection(gatt, player1Characteristic);
-            } else {
-                bleService.setPlayer2Connection(gatt, player2Characteristic);
+
+                // Якщо в режимі 2 гравців - автоматично встановлюємо і Player 2
+                if (twoPlayersRadio.isChecked()) {
+                    bleService.setPlayer2Connection(gatt, player1Characteristic); // Той же пристрій!
+                }
             }
 
             runOnUiThread(() -> {
                 if (playerNumber == 1) {
                     player1Connected = true;
+                    // Для режиму 2 гравців автоматично підключаємо другого
+                    if (twoPlayersRadio.isChecked()) {
+                        player2Connected = true;
+                    }
                 } else {
                     player2Connected = true;
                 }
                 updateConnectionUI();
                 resetScanState();
-                updateConnectionStatus("✅ Гравець " + playerNumber + " готовий до гри!");
+
+                String message = "✅ Гравець " + playerNumber + " готовий до гри!";
+                if (twoPlayersRadio.isChecked() && playerNumber == 1) {
+                    message = "✅ Обидва джойстики готові до гри!";
+                }
+                updateConnectionStatus(message);
             });
         }
     }
@@ -639,7 +695,8 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    private void disconnectPlayer1() {
+    // Додаємо метод для ручного відключення (викликається тільки при явному натисканні "Відключити")
+    private void forceDisconnectPlayer1() {
         try {
             if (player1Gatt != null) {
                 player1Gatt.disconnect();
@@ -649,11 +706,23 @@ public class SettingsActivity extends AppCompatActivity {
             }
             BLEConnectionService.getInstance().clearPlayer1Connection();
             player1Connected = false;
+
+            // Якщо в режимі 2 гравців, то відключаємо і другого
+            if (twoPlayersRadio.isChecked()) {
+                player2Connected = false;
+                BLEConnectionService.getInstance().clearPlayer2Connection();
+            }
+
             updateConnectionUI();
             updateConnectionStatus("❌ Гравець 1 відключено");
         } catch (SecurityException e) {
             Log.e(TAG, "SecurityException при відключенні гравця 1: " + e.getMessage());
         }
+    }
+
+    private void disconnectPlayer1() {
+        // Змінюємо на forceDisconnectPlayer1()
+        forceDisconnectPlayer1();
     }
 
     private void disconnectPlayer2() {
@@ -702,6 +771,8 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+
+        // Зупиняємо сканування якщо активне
         if (isScanning) {
             try {
                 if (bluetoothLeScanner != null) {
@@ -711,9 +782,15 @@ public class SettingsActivity extends AppCompatActivity {
                 Log.e(TAG, "SecurityException при закритті: " + e.getMessage());
             }
         }
-        disconnectPlayer1();
-        disconnectPlayer2();
+
+        // ❗ НЕ ВІДКЛЮЧАЄМО джойстики при закритті налаштувань!
+        // disconnectPlayer1(); // ВИДАЛЕНО
+        // disconnectPlayer2(); // ВИДАЛЕНО
+
+        // Тільки зберігаємо налаштування
         saveSettings();
+
+        Log.d(TAG, "Settings закрито, з'єднання збережено");
     }
 
     @Override

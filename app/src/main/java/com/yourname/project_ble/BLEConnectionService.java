@@ -74,7 +74,7 @@ public class BLEConnectionService {
     }
 
     /**
-     * Новий метод для парсингу 4-байтових даних: X1, Y1, X2, Y2
+     * ОСНОВНИЙ метод для парсингу 4-байтових даних: X1, Y1, X2, Y2
      * @param data - масив з 4 байтів від nRF52832
      */
     public void parseBinaryJoystickData(byte[] data) {
@@ -92,7 +92,7 @@ public class BLEConnectionService {
 
             Log.d(TAG, "🎮 RAW BINARY: [" + x1 + ", " + y1 + ", " + x2 + ", " + y2 + "]");
 
-            // Конвертуємо з діапазону 0-255 в 0-1023 (для сумісності з старим кодом)
+            // Конвертуємо з діапазону 0-255 в 0-1023 (для сумісності з старим кодом змійки)
             int scaled_x1 = (x1 * 1023) / 255;
             int scaled_y1 = (y1 * 1023) / 255;
             int scaled_x2 = (x2 * 1023) / 255;
@@ -112,73 +112,6 @@ public class BLEConnectionService {
     }
 
     /**
-     * Метод для парсингу текстових даних (залишаємо для зворотної сумісності)
-     */
-    public void parsePlayer1Data(String data) {
-        try {
-            Log.d(TAG, "🎮 RAW P1 TEXT data: '" + data + "'");
-
-            String cleanData = data.trim()
-                    .replace("?", "")
-                    .replace("\u0000", "")
-                    .replace("\r", "")
-                    .replace("\n", "")
-                    .replaceAll("[^0-9:]", "");
-
-            Log.d(TAG, "🎮 CLEAN P1 data: '" + cleanData + "'");
-
-            String[] parts = cleanData.split(":");
-
-            if (parts.length == 2 && !parts[0].isEmpty() && !parts[1].isEmpty()) {
-                int x = Integer.parseInt(parts[0]);
-                int y = Integer.parseInt(parts[1]);
-
-                if (joystickListener != null) {
-                    joystickListener.onPlayer1Data(x, y);
-                }
-
-                Log.d(TAG, "✅ Player 1 - X: " + x + ", Y: " + y);
-            } else {
-                Log.w(TAG, "❌ Invalid P1 format: parts=" + parts.length + ", data='" + cleanData + "'");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ P1 parse error: " + e.getMessage() + " for: '" + data + "'");
-        }
-    }
-
-    public void parsePlayer2Data(String data) {
-        try {
-            Log.d(TAG, "🎮 RAW P2 TEXT data: '" + data + "'");
-
-            String cleanData = data.trim()
-                    .replace("?", "")
-                    .replace("\u0000", "")
-                    .replace("\r", "")
-                    .replace("\n", "")
-                    .replaceAll("[^0-9:]", "");
-
-            Log.d(TAG, "🎮 CLEAN P2 data: '" + cleanData + "'");
-
-            String[] parts = cleanData.split(":");
-
-            if (parts.length == 2 && !parts[0].isEmpty() && !parts[1].isEmpty()) {
-                int x = Integer.parseInt(parts[0]);
-                int y = Integer.parseInt(parts[1]);
-
-                if (joystickListener != null) {
-                    joystickListener.onPlayer2Data(x, y);
-                }
-
-                Log.d(TAG, "✅ Player 2 - X: " + x + ", Y: " + y);
-            } else {
-                Log.w(TAG, "❌ Invalid P2 format: parts=" + parts.length + ", data='" + cleanData + "'");
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ P2 parse error: " + e.getMessage() + " for: '" + data + "'");
-        }
-    }
-
-    /**
      * Універсальний метод для автоматичного визначення формату даних
      */
     public void parseJoystickData(byte[] data) {
@@ -194,106 +127,10 @@ public class BLEConnectionService {
             Log.d(TAG, "🎯 Using BINARY format (4 bytes)");
             parseBinaryJoystickData(data);
         } else {
-            // Старий текстовий формат
-            Log.d(TAG, "🎯 Using TEXT format");
+            // Інший формат - логуємо для налагодження
+            Log.w(TAG, "⚠️ Unexpected data length: " + data.length);
             String textData = new String(data);
-            parseCombinedJoystickData(textData, 1);
-        }
-    }
-
-    /**
-     * Метод для парсингу текстових даних з двох джойстиків (залишаємо для сумісності)
-     */
-    public void parseCombinedJoystickData(String data, int playerNumber) {
-        try {
-            Log.d(TAG, "🎮 RAW COMBINED data from P" + playerNumber + ": '" + data + "'");
-
-            String cleanData = data.trim()
-                    .replace("?", "")
-                    .replace("\u0000", "")
-                    .replace("\r", "")
-                    .replace("\n", "")
-                    .replaceAll("[^0-9:,]", "");
-
-            Log.d(TAG, "🎮 CLEAN COMBINED data: '" + cleanData + "'");
-
-            // Спробуємо різні формати
-            if (cleanData.contains(",")) {
-                // Формат: X1:Y1,X2:Y2
-                String[] joysticks = cleanData.split(",");
-                if (joysticks.length == 2) {
-                    parseJoystickPair(joysticks[0], 1);
-                    parseJoystickPair(joysticks[1], 2);
-                    return;
-                }
-            }
-
-            // Формат: X1:Y1:X2:Y2
-            String[] parts = cleanData.split(":");
-            if (parts.length == 4) {
-                int x1 = Integer.parseInt(parts[0]);
-                int y1 = Integer.parseInt(parts[1]);
-                int x2 = Integer.parseInt(parts[2]);
-                int y2 = Integer.parseInt(parts[3]);
-
-                if (joystickListener != null) {
-                    joystickListener.onPlayer1Data(x1, y1);
-                    joystickListener.onPlayer2Data(x2, y2);
-                }
-
-                Log.d(TAG, "✅ P1: X=" + x1 + " Y=" + y1 + ", P2: X=" + x2 + " Y=" + y2);
-                return;
-            }
-
-            // ТИМЧАСОВЕ РІШЕННЯ: якщо приходить тільки один джойстик (X:Y), симулюємо другий
-            if (parts.length == 2) {
-                int x1 = Integer.parseInt(parts[0]);
-                int y1 = Integer.parseInt(parts[1]);
-
-                // Симулюємо другий джойстик зі зміщенням +50
-                int x2 = Math.min(1023, x1 + 50);
-                int y2 = Math.min(1023, y1 + 50);
-
-                if (joystickListener != null) {
-                    joystickListener.onPlayer1Data(x1, y1);
-                    joystickListener.onPlayer2Data(x2, y2); // СИМУЛЯЦІЯ!
-                }
-
-                Log.d(TAG, "🎯 СИМУЛЯЦІЯ: P1: X=" + x1 + " Y=" + y1 + ", P2: X=" + x2 + " Y=" + y2 + " (симульований)");
-                return;
-            }
-
-            // Якщо не підходить жоден формат - парсимо як один джойстик
-            if (playerNumber == 1) {
-                parsePlayer1Data(data);
-            } else {
-                parsePlayer2Data(data);
-            }
-
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Combined parse error: " + e.getMessage() + " for: '" + data + "'");
-        }
-    }
-
-    private void parseJoystickPair(String joystickData, int playerNumber) {
-        try {
-            String[] parts = joystickData.split(":");
-            if (parts.length == 2) {
-                int x = Integer.parseInt(parts[0]);
-                int y = Integer.parseInt(parts[1]);
-
-                if (joystickListener != null) {
-                    if (playerNumber == 1) {
-                        joystickListener.onPlayer1Data(x, y);
-                    } else {
-                        joystickListener.onPlayer2Data(x, y);
-                    }
-                }
-
-                Log.d(TAG, "✅ Player " + playerNumber + " - X: " + x + ", Y: " + y);
-            }
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Parse pair error: " + e.getMessage());
+            Log.w(TAG, "⚠️ Data as text: '" + textData + "'");
         }
     }
 

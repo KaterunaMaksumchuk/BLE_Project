@@ -173,7 +173,12 @@ public class SnakeGameActivity extends AppCompatActivity {
 
         // Перевіряємо фактичний стан BLE підключень через Service
         boolean actualPlayer1 = bleService.isPlayer1Connected();
-        boolean actualPlayer2 = bleService.isPlayer2Connected();
+
+        // ✅ ВИПРАВЛЕННЯ: Для одного пристрою з двома джойстиками
+        // Player 2 використовує ту ж BLE характеристику що і Player 1
+        boolean actualPlayer2 = actualPlayer1; // Той же пристрій!
+
+        Log.d(TAG, "🔍 Checking connections - P1: " + actualPlayer1 + ", P2: " + actualPlayer2);
 
         if (gameSettings.playersCount == 1) {
             if (!actualPlayer1) {
@@ -182,19 +187,10 @@ public class SnakeGameActivity extends AppCompatActivity {
                 return false;
             }
         } else {
-            if (!actualPlayer1 || !actualPlayer2) {
-                String message = "❌ ";
-                if (!actualPlayer1 && !actualPlayer2) {
-                    message += "Обидва контролери відключені";
-                } else if (!actualPlayer1) {
-                    message += "Контролер гравця 1 відключений";
-                } else {
-                    message += "Контролер гравця 2 відключений";
-                }
-                message += " - перевірте налаштування";
-
-                updateStatus(message);
-                Toast.makeText(this, "Підключи всі необхідні контролери в налаштуваннях!", Toast.LENGTH_LONG).show();
+            // Для 2 гравців достатньо одного BLE підключення (один пристрій - два джойстики)
+            if (!actualPlayer1) {
+                updateStatus("❌ Контролер не підключений - перевірте налаштування");
+                Toast.makeText(this, "Підключи контролер в налаштуваннях!", Toast.LENGTH_LONG).show();
                 return false;
             }
         }
@@ -252,9 +248,9 @@ public class SnakeGameActivity extends AppCompatActivity {
         // Логуємо стан підключень
         bleService.logStatus();
 
-        // Перевіряємо чи є активні підключення
+        // ✅ ВИПРАВЛЕННЯ: Правильна перевірка для одного пристрою
         boolean actualPlayer1 = bleService.isPlayer1Connected();
-        boolean actualPlayer2 = bleService.isPlayer2Connected();
+        boolean actualPlayer2 = actualPlayer1; // Той же пристрій!
 
         Log.d(TAG, "Settings P1: " + gameSettings.player1Connected + ", Actual P1: " + actualPlayer1);
         Log.d(TAG, "Settings P2: " + gameSettings.player2Connected + ", Actual P2: " + actualPlayer2);
@@ -263,19 +259,15 @@ public class SnakeGameActivity extends AppCompatActivity {
         String statusMessage;
         if (gameSettings.playersCount == 1) {
             if (actualPlayer1) {
-                statusMessage = "🎮 Контролер гравця 1 готовий";
+                statusMessage = "🎮 Контролер готовий";
             } else {
-                statusMessage = "❌ Підключи контролер гравця 1 в налаштуваннях";
+                statusMessage = "❌ Підключи контролер в налаштуваннях";
             }
         } else {
-            if (actualPlayer1 && actualPlayer2) {
-                statusMessage = "🎮🎮 Обидва контролери готові";
-            } else if (actualPlayer1) {
-                statusMessage = "🎮❌ Тільки гравець 1 підключений";
-            } else if (actualPlayer2) {
-                statusMessage = "❌🎮 Тільки гравець 2 підключений";
+            if (actualPlayer1) { // Достатньо одного підключення
+                statusMessage = "🎮🎮 Обидва джойстики готові";
             } else {
-                statusMessage = "❌❌ Підключи контролери в налаштуваннях";
+                statusMessage = "❌❌ Підключи контролер в налаштуваннях";
             }
         }
 
