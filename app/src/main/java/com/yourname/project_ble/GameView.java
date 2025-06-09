@@ -56,9 +56,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     private boolean surfaceReady = false;
     private SnakeGameActivity parentActivity;
 
-    // Джойстики
-    private int joystick1X = 512, joystick1Y = 512;
-    private int joystick2X = 512, joystick2Y = 512;
+    // Джойстики - ✅ ВИПРАВЛЕНА ЛОГІКА
+    private int joystick1X = 500, joystick1Y = 500; // Центр = 500, не 512!
+    private int joystick2X = 500, joystick2Y = 500;
 
     // Кольори змійок
     private int[] snake1Colors = {
@@ -219,51 +219,81 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         updateJoystick1(x, y);
     }
 
+    // ✅ ВИПРАВЛЕНА ЛОГІКА для Player 1
     public void updateJoystick1(int x, int y) {
-        if (!isPlaying) return;
+        if (!isPlaying) {
+            Log.d(TAG, "🚫 Game not playing, ignoring joystick input");
+            return;
+        }
 
         joystick1X = x;
         joystick1Y = y;
 
-        int deadZone = 150; // Збільшили мертву зону
-        int deltaX = x - 512;
-        int deltaY = y - 512;
+        // ✅ НОВА ЛОГІКА відповідно до твоїх вимог:
+        // X=500 Y=1000 - вправо
+        // X=0 Y=500 - вгору
+        // X=500 Y=0 - вліво
+        // X=1000 Y=500 - вниз
 
+        int deadZone = 200; // Збільшили мертву зону
+        int centerX = 500;
+        int centerY = 500;
+
+        int deltaX = x - centerX;
+        int deltaY = y - centerY;
+
+        Log.d(TAG, "🕹️ P1 Input: X=" + x + " Y=" + y + " | ΔX=" + deltaX + " ΔY=" + deltaY);
+
+        // Перевіряємо чи вийшли за межі мертвої зони
         if (Math.abs(deltaX) > deadZone || Math.abs(deltaY) > deadZone) {
             int newDirection = direction1;
 
+            // Визначаємо напрямок за найбільшим відхиленням
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
                 // Горизонтальний рух
                 if (deltaX > 0 && direction1 != 3) {
-                    newDirection = 1; // вправо
+                    newDirection = 1; // вправо (X > 500)
+                    Log.d(TAG, "🔵 P1: Рух ВПРАВО");
                 } else if (deltaX < 0 && direction1 != 1) {
-                    newDirection = 3; // вліво
+                    newDirection = 3; // вліво (X < 500)
+                    Log.d(TAG, "🔴 P1: Рух ВЛІВО");
                 }
             } else {
                 // Вертикальний рух
                 if (deltaY > 0 && direction1 != 0) {
-                    newDirection = 2; // вниз
+                    newDirection = 2; // вниз (Y > 500)
+                    Log.d(TAG, "🟡 P1: Рух ВНИЗ");
                 } else if (deltaY < 0 && direction1 != 2) {
-                    newDirection = 0; // вгору
+                    newDirection = 0; // вгору (Y < 500)
+                    Log.d(TAG, "🟢 P1: Рух ВГОРУ");
                 }
             }
 
             if (newDirection != direction1) {
                 direction1 = newDirection;
-                Log.d(TAG, "🕹️ Player 1 direction: " + direction1);
+                Log.d(TAG, "✅ P1 direction changed to: " + getDirectionName(direction1));
             }
         }
     }
 
+    // ✅ ВИПРАВЛЕНА ЛОГІКА для Player 2
     public void updateJoystick2(int x, int y) {
-        if (!isPlaying || gameSettings.playersCount != 2) return;
+        if (!isPlaying || gameSettings.playersCount != 2) {
+            Log.d(TAG, "🚫 P2 not active, ignoring joystick input");
+            return;
+        }
 
         joystick2X = x;
         joystick2Y = y;
 
-        int deadZone = 150;
-        int deltaX = x - 512;
-        int deltaY = y - 512;
+        int deadZone = 200;
+        int centerX = 500;
+        int centerY = 500;
+
+        int deltaX = x - centerX;
+        int deltaY = y - centerY;
+
+        Log.d(TAG, "🕹️ P2 Input: X=" + x + " Y=" + y + " | ΔX=" + deltaX + " ΔY=" + deltaY);
 
         if (Math.abs(deltaX) > deadZone || Math.abs(deltaY) > deadZone) {
             int newDirection = direction2;
@@ -271,21 +301,36 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             if (Math.abs(deltaX) > Math.abs(deltaY)) {
                 if (deltaX > 0 && direction2 != 3) {
                     newDirection = 1; // вправо
+                    Log.d(TAG, "🔵 P2: Рух ВПРАВО");
                 } else if (deltaX < 0 && direction2 != 1) {
                     newDirection = 3; // вліво
+                    Log.d(TAG, "🔴 P2: Рух ВЛІВО");
                 }
             } else {
                 if (deltaY > 0 && direction2 != 0) {
                     newDirection = 2; // вниз
+                    Log.d(TAG, "🟡 P2: Рух ВНИЗ");
                 } else if (deltaY < 0 && direction2 != 2) {
                     newDirection = 0; // вгору
+                    Log.d(TAG, "🟢 P2: Рух ВГОРУ");
                 }
             }
 
             if (newDirection != direction2) {
                 direction2 = newDirection;
-                Log.d(TAG, "🕹️ Player 2 direction: " + direction2);
+                Log.d(TAG, "✅ P2 direction changed to: " + getDirectionName(direction2));
             }
+        }
+    }
+
+    // Допоміжний метод для логування
+    private String getDirectionName(int direction) {
+        switch (direction) {
+            case 0: return "ВГОРУ";
+            case 1: return "ВПРАВО";
+            case 2: return "ВНИЗ";
+            case 3: return "ВЛІВО";
+            default: return "НЕВІДОМО";
         }
     }
 
@@ -707,7 +752,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         canvas.drawText("⚡ Швидкість: " + (700 - moveInterval), 15, screenHeight - 45, paint);
         canvas.drawText("🍎 Їжі: " + food.size(), 15, screenHeight - 15, paint);
 
-        // Джойстик індикатори
+        // ✅ ВІДОБРАЖАЄМО АКТУАЛЬНІ КООРДИНАТИ ДЖОЙСТИКА
         paint.setTextAlign(Paint.Align.RIGHT);
         paint.setTextSize(20);
         canvas.drawText("🕹️1: " + joystick1X + "," + joystick1Y, screenWidth - 15, 30, paint);
@@ -715,6 +760,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         if (gameSettings.playersCount == 2) {
             canvas.drawText("🕹️2: " + joystick2X + "," + joystick2Y, screenWidth - 15, 55, paint);
         }
+
+        // ✅ ПОКАЗУЄМО ПОТОЧНИЙ НАПРЯМОК
+        paint.setTextAlign(Paint.Align.RIGHT);
+        paint.setTextSize(18);
+        paint.setColor(Color.YELLOW);
+        canvas.drawText("Напрямок: " + getDirectionName(direction1), screenWidth - 15, 80, paint);
     }
 
     private int adjustBrightness(int color, float factor) {

@@ -74,8 +74,14 @@ public class BLEConnectionService {
     }
 
     /**
-     * ОСНОВНИЙ метод для парсингу 4-байтових даних: X1, Y1, X2, Y2
+     * ✅ ВИПРАВЛЕНИЙ метод для парсингу 4-байтових даних з правильним порядком
      * @param data - масив з 4 байтів від nRF52832
+     *
+     * nRF52832 відправляє байти в такому порядку:
+     * data[0] = temp4 (val_mv3 - channel 3) = Player 2, Y
+     * data[1] = temp3 (val_mv2 - channel 2) = Player 2, X
+     * data[2] = temp2 (val_mv1 - channel 1) = Player 1, Y
+     * data[3] = temp1 (val_mv0 - channel 0) = Player 1, X
      */
     public void parseBinaryJoystickData(byte[] data) {
         try {
@@ -84,26 +90,28 @@ public class BLEConnectionService {
                 return;
             }
 
-            // Конвертуємо байти в unsigned int (0-255)
-            int x1 = data[0] & 0xFF;  // Джойстик 1, вісь X
-            int y1 = data[1] & 0xFF;  // Джойстик 1, вісь Y
-            int x2 = data[2] & 0xFF;  // Джойстик 2, вісь X
-            int y2 = data[3] & 0xFF;  // Джойстик 2, вісь Y
+            // ✅ ПРАВИЛЬНИЙ ПОРЯДОК байтів згідно з nRF52832 main.c:
+            int player2_y_raw = data[0] & 0xFF;  // temp4 (val_mv3 - channel 3)
+            int player2_x_raw = data[1] & 0xFF;  // temp3 (val_mv2 - channel 2)
+            int player1_y_raw = data[2] & 0xFF;  // temp2 (val_mv1 - channel 1)
+            int player1_x_raw = data[3] & 0xFF;  // temp1 (val_mv0 - channel 0)
 
-            Log.d(TAG, "🎮 RAW BINARY: [" + x1 + ", " + y1 + ", " + x2 + ", " + y2 + "]");
+            Log.d(TAG, "🎮 RAW BINARY: P1_X=" + player1_x_raw + " P1_Y=" + player1_y_raw +
+                    " P2_X=" + player2_x_raw + " P2_Y=" + player2_y_raw);
 
-            // Конвертуємо з діапазону 0-255 в 0-1023 (для сумісності з старим кодом змійки)
-            int scaled_x1 = (x1 * 1023) / 255;
-            int scaled_y1 = (y1 * 1023) / 255;
-            int scaled_x2 = (x2 * 1023) / 255;
-            int scaled_y2 = (y2 * 1023) / 255;
+            // ✅ НОВА СИСТЕМА КООРДИНАТ: конвертуємо з діапазону 0-255 в 0-1000
+            int player1_x = (player1_x_raw * 1000) / 255;
+            int player1_y = (player1_y_raw * 1000) / 255;
+            int player2_x = (player2_x_raw * 1000) / 255;
+            int player2_y = (player2_y_raw * 1000) / 255;
 
-            Log.d(TAG, "✅ SCALED: P1(X=" + scaled_x1 + ", Y=" + scaled_y1 + ") P2(X=" + scaled_x2 + ", Y=" + scaled_y2 + ")");
+            Log.d(TAG, "✅ SCALED to 0-1000: P1(X=" + player1_x + ", Y=" + player1_y +
+                    ") P2(X=" + player2_x + ", Y=" + player2_y + ")");
 
             // Відправляємо дані слухачам
             if (joystickListener != null) {
-                joystickListener.onPlayer1Data(scaled_x1, scaled_y1);
-                joystickListener.onPlayer2Data(scaled_x2, scaled_y2);
+                joystickListener.onPlayer1Data(player1_x, player1_y);
+                joystickListener.onPlayer2Data(player2_x, player2_y);
             }
 
         } catch (Exception e) {
